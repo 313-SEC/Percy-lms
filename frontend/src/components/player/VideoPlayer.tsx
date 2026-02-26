@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { type MouseEvent, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 interface SubtitleConfig {
   src: string
@@ -74,7 +74,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       if (playing) { videoRef.current.pause() } else { videoRef.current.play() }
     }
 
-    const handleScrub = (e: React.MouseEvent<HTMLDivElement>) => {
+    const handleScrub = (e: MouseEvent<HTMLDivElement>) => {
       if (!videoRef.current || !duration) return
       const rect = e.currentTarget.getBoundingClientRect()
       const pct = (e.clientX - rect.left) / rect.width

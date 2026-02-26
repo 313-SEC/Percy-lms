@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { api, coursesApi, type Module } from '../../api/client'
 
 export default function UploadModal({ courseId, onClose, onUploaded }: {
@@ -21,7 +21,7 @@ export default function UploadModal({ courseId, onClose, onUploaded }: {
     }).catch(() => {})
   }, [courseId])
 
-  const upload = async (e: React.FormEvent) => {
+  const upload = async (e: FormEvent) => {
     e.preventDefault()
     if (!file || !moduleId || !title.trim()) return
     setUploading(true)

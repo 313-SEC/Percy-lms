@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   DndContext,
   closestCenter,
@@ -21,8 +20,19 @@ import { coursesApi, type Course } from '../api/client'
 import CourseCard from '../components/courses/CourseCard'
 import CreateCourseModal from '../components/courses/CreateCourseModal'
 import UploadModal from '../components/courses/UploadModal'
+import CourseDetailPanel from '../components/courses/CourseDetailPanel'
 
-function SortableCourse({ course, onSelect, onDelete }: { course: Course; onSelect: () => void; onDelete: () => void }) {
+function SortableCourse({
+  course,
+  selected,
+  onSelect,
+  onDelete,
+}: {
+  course: Course
+  selected: boolean
+  onSelect: () => void
+  onDelete: () => void
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: course.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
 
@@ -30,6 +40,7 @@ function SortableCourse({ course, onSelect, onDelete }: { course: Course; onSele
     <div ref={setNodeRef} style={style}>
       <CourseCard
         course={course}
+        selected={selected}
         onSelect={onSelect}
         onDelete={onDelete}
         dragHandleProps={{ ...attributes, ...listeners }}
@@ -43,7 +54,6 @@ export default function CourseBrowser() {
   const [showCreate, setShowCreate] = useState(false)
   const [showUpload, setShowUpload] = useState<number | null>(null)
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null)
-  const navigate = useNavigate()
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -67,40 +77,41 @@ export default function CourseBrowser() {
   const deleteCourse = async (id: number) => {
     if (!confirm('Delete this course and all its content?')) return
     await coursesApi.delete(id).catch(() => {})
+    if (selectedCourse === id) setSelectedCourse(null)
     load()
   }
 
   return (
     <div style={{ maxWidth: 1200 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 'var(--space-6)',
+        }}
+      >
         <div>
           <h2 className="cursor-blink">Courses</h2>
           <p className="text-muted text-sm" style={{ marginTop: 'var(--space-2)' }}>
-            {courses.length} course{courses.length !== 1 ? 's' : ''} — drag to reorder
+            {courses.length} course{courses.length !== 1 ? 's' : ''} — drag to reorder, click to manage
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-          {selectedCourse && (
-            <button
-              className="btn btn-secondary"
-              onClick={() => setShowUpload(selectedCourse)}
-            >
-              <span className="material-icons" style={{ fontSize: 18 }}>upload_file</span>
-              Upload Content
-            </button>
-          )}
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            <span className="material-icons" style={{ fontSize: 18 }}>add</span>
-            New Course
-          </button>
-        </div>
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+          <span className="material-icons" style={{ fontSize: 18 }}>add</span>
+          New Course
+        </button>
       </div>
 
       {courses.length === 0 ? (
         <div className="empty-state">
           <span className="material-icons">school</span>
           <p>No courses yet.</p>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)} style={{ marginTop: 'var(--space-4)' }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowCreate(true)}
+            style={{ marginTop: 'var(--space-4)' }}
+          >
             Create your first course
           </button>
         </div>
@@ -112,7 +123,10 @@ export default function CourseBrowser() {
                 <SortableCourse
                   key={course.id}
                   course={course}
-                  onSelect={() => setSelectedCourse(selectedCourse === course.id ? null : course.id)}
+                  selected={selectedCourse === course.id}
+                  onSelect={() =>
+                    setSelectedCourse(selectedCourse === course.id ? null : course.id)
+                  }
                   onDelete={() => deleteCourse(course.id)}
                 />
               ))}
@@ -121,10 +135,23 @@ export default function CourseBrowser() {
         </DndContext>
       )}
 
+      {/* Course detail panel — shown below grid when a course is selected */}
+      {selectedCourse !== null && (
+        <CourseDetailPanel
+          courseId={selectedCourse}
+          onClose={() => setSelectedCourse(null)}
+          onUpload={() => setShowUpload(selectedCourse)}
+        />
+      )}
+
       {showCreate && (
         <CreateCourseModal
           onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); load() }}
+          onCreated={(id) => {
+            setShowCreate(false)
+            load()
+            setSelectedCourse(id)
+          }}
         />
       )}
 
@@ -132,7 +159,12 @@ export default function CourseBrowser() {
         <UploadModal
           courseId={showUpload}
           onClose={() => setShowUpload(null)}
-          onUploaded={load}
+          onUploaded={() => {
+            // Refresh the detail panel
+            const id = selectedCourse
+            setSelectedCourse(null)
+            setTimeout(() => setSelectedCourse(id), 50)
+          }}
         />
       )}
     </div>

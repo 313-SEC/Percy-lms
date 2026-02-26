@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import { coursesApi } from '../../api/client'
 
 const COLORS = ['#00ffff', '#9d00ff', '#39ff14', '#ff6600', '#ff003c', '#ffee00']
 
-export default function CreateCourseModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+export default function CreateCourseModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: number) => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
@@ -11,13 +11,13 @@ export default function CreateCourseModal({ onClose, onCreated }: { onClose: () 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
     setLoading(true)
     try {
-      await coursesApi.create({ title: title.trim(), description, category, color })
-      onCreated()
+      const res = await coursesApi.create({ title: title.trim(), description, category, color })
+      onCreated(res.data.id)
     } catch {
       setError('Failed to create course')
     } finally {
