@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Percy LMS — Animation Library
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
+
+@keyframes glitch {
+  0%, 100% { transform: none; clip-path: none; }
+  10% { transform: skewX(-2deg); clip-path: inset(20% 0 60% 0); }
+  20% { transform: skewX(2deg); clip-path: inset(60% 0 20% 0); }
+  30% { transform: none; clip-path: none; }
+  40% { transform: skewX(-1deg) translateX(2px); clip-path: inset(40% 0 40% 0); }
+  50% { transform: none; clip-path: none; }
+}
+
+@keyframes neonPulse {
+  0%, 100% { box-shadow: 0 0 5px var(--cyan), 0 0 15px rgba(0,255,255,0.2); }
+  50%       { box-shadow: 0 0 12px var(--cyan), 0 0 35px rgba(0,255,255,0.5); }
+}
+
+@keyframes neonPulseText {
+  0%, 100% { text-shadow: 0 0 4px var(--cyan), 0 0 10px rgba(0,255,255,0.3); }
+  50%       { text-shadow: 0 0 10px var(--cyan), 0 0 30px rgba(0,255,255,0.6); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: translateX(20px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes xpGain {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.3); color: var(--yellow); text-shadow: 0 0 12px var(--yellow); }
+  100% { transform: scale(1); }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(0,255,255,0.18); }
+  50%       { border-color: rgba(0,255,255,0.6); box-shadow: var(--glow-cyan); }
+}
+
+/* ── Utility animation classes ────────────────────────────────────────────── */
+
+.animate-fade-in    { animation: fadeIn 0.3s ease forwards; }
+.animate-glitch     { animation: glitch 0.4s ease; }
+.animate-neon-pulse { animation: neonPulse 2s ease-in-out infinite; }
+.animate-pulse-text { animation: neonPulseText 2s ease-in-out infinite; }
+.animate-blink      { animation: blink 1s step-end infinite; }
+.animate-spin       { animation: spin 1s linear infinite; }
+.animate-xp-gain    { animation: xpGain 0.5s ease; }
+.animate-border-glow{ animation: borderGlow 3s ease-in-out infinite; }
+
+/* ── Cursor blink for hacker effect ──────────────────────────────────────── */
+.cursor-blink::after {
+  content: '█';
+  animation: blink 1s step-end infinite;
+  color: var(--cyan);
+  margin-left: 2px;
+}
+
+/* ── Hover glow on interactive elements ─────────────────────────────────── */
+.hover-glow {
+  transition: box-shadow 0.2s;
+}
+.hover-glow:hover {
+  box-shadow: var(--glow-cyan);
+}
+
+.hover-glow-purple {
+  transition: box-shadow 0.2s;
+}
+.hover-glow-purple:hover {
+  box-shadow: var(--glow-purple);
+}
+
+/* ── Page transitions ─────────────────────────────────────────────────────── */
+.page-enter { animation: fadeIn 0.25s ease; }
