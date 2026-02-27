@@ -59,8 +59,8 @@ setup_backend() {
   fi
 
   echo -e "${CYAN}[2/4] Installing Python dependencies...${NC}"
-  pip install -q --upgrade pip
-  pip install -q -r requirements.txt
+  python -m pip install -q --upgrade pip
+  python -m pip install -q -r requirements.txt
 
   if [ ! -f "$SCRIPT_DIR/.env" ]; then
     echo -e "${CYAN}[*] Creating .env from .env.example...${NC}"
