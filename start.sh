@@ -60,6 +60,13 @@ setup_backend() {
 
   echo -e "${CYAN}[2/4] Installing Python dependencies...${NC}"
   python -m pip install -q --upgrade pip
+  python -m pip install -q --upgrade setuptools wheel  # required by openai-whisper
+
+  # On Windows, python-magic needs the binary bundle (includes libmagic DLL)
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+    python -m pip install -q python-magic-bin
+  fi
+
   python -m pip install -q -r requirements.txt
 
   if [ ! -f "$SCRIPT_DIR/.env" ]; then
