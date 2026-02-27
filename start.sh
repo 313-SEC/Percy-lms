@@ -60,12 +60,16 @@ setup_backend() {
 
   echo -e "${CYAN}[2/4] Installing Python dependencies...${NC}"
   python -m pip install -q --upgrade pip
-  python -m pip install -q --upgrade setuptools wheel  # required by openai-whisper
+  python -m pip install -q --upgrade setuptools wheel
 
   # On Windows, python-magic needs the binary bundle (includes libmagic DLL)
   if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
     python -m pip install -q python-magic-bin
   fi
+
+  # openai-whisper's setup.py uses pkg_resources which requires build isolation disabled
+  # so that it can see our already-installed setuptools
+  python -m pip install -q --no-build-isolation openai-whisper==20240930
 
   python -m pip install -q -r requirements.txt
 
