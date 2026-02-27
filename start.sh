@@ -28,9 +28,14 @@ banner() {
 }
 
 check_deps() {
+  # On Windows, Python may only be available as 'python'
   if ! command -v python3 &>/dev/null; then
-    echo -e "${RED}Error: python3 not found${NC}"
-    exit 1
+    if command -v python &>/dev/null; then
+      alias python3=python
+    else
+      echo -e "${RED}Error: python3 not found${NC}"
+      exit 1
+    fi
   fi
   if ! command -v node &>/dev/null; then
     echo -e "${RED}Error: Node.js not found${NC}"
@@ -46,7 +51,12 @@ setup_backend() {
     python3 -m venv .venv
   fi
 
-  source .venv/bin/activate
+  # Windows (Git Bash) uses Scripts/, Linux/macOS uses bin/
+  if [ -f ".venv/Scripts/activate" ]; then
+    source .venv/Scripts/activate
+  else
+    source .venv/bin/activate
+  fi
 
   echo -e "${CYAN}[2/4] Installing Python dependencies...${NC}"
   pip install -q --upgrade pip
@@ -90,7 +100,11 @@ start_servers() {
 
   # Start backend
   cd "$SCRIPT_DIR/backend"
-  source .venv/bin/activate
+  if [ -f ".venv/Scripts/activate" ]; then
+    source .venv/Scripts/activate
+  else
+    source .venv/bin/activate
+  fi
   PYTHONPATH="$SCRIPT_DIR/backend" uvicorn app.main:app \
     --reload \
     --port 8000 \
