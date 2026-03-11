@@ -1,18 +1,18 @@
 """
 Video progress tracking and bookmarks router.
 """
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.course import Content
+from app.models.course import Content, Module
 from app.models.learning import Bookmark
 from app.models.progress import VideoProgress
 from app.models.user import User
 from app.schemas.progress import BookmarkCreate, BookmarkResponse, ProgressResponse, ProgressUpdate
-from app.services.gamification_service import XP_CONTENT_COMPLETE, XP_VIDEO_MINUTE, award_xp
+from app.services.gamification_service import XP_CONTENT_COMPLETE, XP_VIDEO_MINUTE, award_xp, check_and_grant_achievements
 from app.utils.deps import get_current_user, get_db
 
 router = APIRouter(prefix="/player", tags=["player"])
@@ -74,6 +74,46 @@ async def update_progress(
     minutes_delta = int(body.watch_seconds_delta // 60)
     if minutes_delta > 0:
         await award_xp(db, user, "video_watched", minutes_delta * XP_VIDEO_MINUTE, f"Watched {minutes_delta} minute(s)")
+
+    # Check achievements
+    now_hour = datetime.now(timezone.utc).hour
+    is_night_owl = now_hour < 5  # midnight to 5 AM UTC
+
+    achievement_context: dict = {
+        "video_watched": True,
+        "night_owl": is_night_owl,
+    }
+
+    if body.completed and not was_completed:
+        # Check if the whole course is now completed in a single day
+        content_row = await db.execute(select(Content).where(Content.id == content_id))
+        content = content_row.scalar_one_or_none()
+        if content:
+            module_row = await db.execute(select(Module).where(Module.id == content.module_id))
+            module = module_row.scalar_one_or_none()
+            if module:
+                # Get all content in the course
+                all_content_result = await db.execute(
+                    select(Content).join(Module).where(Module.course_id == module.course_id)
+                )
+                all_content = all_content_result.scalars().all()
+                all_content_ids = [c.id for c in all_content]
+
+                # Get all VideoProgress for the course
+                progress_result = await db.execute(
+                    select(VideoProgress).where(VideoProgress.content_id.in_(all_content_ids))
+                )
+                all_progress = progress_result.scalars().all()
+
+                all_completed = len(all_progress) == len(all_content_ids) and all(p.completed for p in all_progress)
+                if all_completed:
+                    today = date.today()
+                    course_completed_today = all(
+                        p.last_watched_at.date() == today for p in all_progress
+                    )
+                    achievement_context["course_completed_today"] = course_completed_today
+
+    await check_and_grant_achievements(db, user, achievement_context)
 
     await db.commit()
     await db.refresh(prog)

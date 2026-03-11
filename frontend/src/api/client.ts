@@ -154,8 +154,18 @@ export const subtitlesApi = {
   },
   generate: (contentId: number, language_code = 'en') =>
     api.post(`/subtitles/${contentId}/generate`, null, { params: { language_code } }),
+  transcriptionStatus: (contentId: number) =>
+    api.get<{ content_id: number; status: string }>(`/subtitles/${contentId}/transcription-status`),
   delete: (id: number) => api.delete(`/subtitles/${id}`),
   serveUrl: (id: number) => `${BASE_URL}/subtitles/${id}/serve`,
+}
+
+export const searchApi = {
+  search: (q: string) => api.get<SearchResults>('/search', { params: { q } }),
+}
+
+export const studyHistoryApi = {
+  get: (days = 30) => api.get<StudyHistory>('/gamification/study-history', { params: { days } }),
 }
 
 // ── Type definitions ──────────────────────────────────────────────────────
@@ -232,4 +242,19 @@ export interface AIProviderConfig {
 export interface SubtitleTrack {
   id: number; content_id: number; language_code: string;
   is_auto_generated: boolean; created_at: string;
+}
+
+export interface SearchResults {
+  query: string;
+  courses: { id: number; title: string; description?: string; color: string }[];
+  content: { id: number; title: string; content_type: string; module_id: number; module_title: string; course_id: number }[];
+  notes: { id: number; title: string; body_preview: string; content_id?: number; course_id?: number; updated_at: string }[];
+}
+
+export interface StudyHistoryDay {
+  date: string; xp_earned: number; pomodoro_sessions: number;
+}
+
+export interface StudyHistory {
+  days: number; history: StudyHistoryDay[];
 }

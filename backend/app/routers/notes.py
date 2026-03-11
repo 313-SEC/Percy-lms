@@ -1,14 +1,16 @@
 """Notes router — CRUD with markdown sanitization."""
 import bleach
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import Note
 from app.models.user import User
 from app.schemas.notes import NoteCreate, NoteResponse, NoteUpdate
-from app.services.gamification_service import XP_NOTE_CREATED, award_xp
+from app.services.gamification_service import XP_NOTE_CREATED, award_xp, check_and_grant_achievements
 from app.utils.deps import get_current_user, get_db
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -52,6 +54,17 @@ async def create_note(
     db.add(note)
 
     await award_xp(db, user, "note_created", XP_NOTE_CREATED, "Created a note")
+
+    # Count total notes for note_taker_10 achievement
+    count_result = await db.execute(select(func.count(Note.id)))
+    note_count = count_result.scalar() or 0
+
+    now_hour = datetime.now(timezone.utc).hour
+    await check_and_grant_achievements(db, user, {
+        "note_count": note_count + 1,  # +1 because note not yet committed
+        "night_owl": now_hour < 5,
+    })
+
     await db.commit()
     await db.refresh(note)
     return note

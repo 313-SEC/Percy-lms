@@ -6,13 +6,15 @@ import asyncio
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from sqlalchemy import select
+from pydantic import BaseModel
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.course import Content, ContentType, Module
 from app.models.user import User
 from app.schemas.course import ContentResponse
 from app.services.file_service import save_upload
+from app.services.gamification_service import check_and_grant_achievements
 from app.utils.deps import get_current_user, get_db
 
 router = APIRouter(prefix="/upload", tags=["upload"])
@@ -68,7 +70,7 @@ async def upload_document(
     title: str = Form(..., min_length=1, max_length=256),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     result = await db.execute(select(Module).where(Module.id == module_id))
     if not result.scalar_one_or_none():
@@ -91,6 +93,57 @@ async def upload_document(
         title=title.strip(),
         content_type=ContentType.pdf,
         file_path=file_path,
+        order_index=order,
+    )
+    db.add(content)
+    await db.commit()
+
+    # Count total document/pdf content for bookworm achievement
+    doc_count_result = await db.execute(
+        select(func.count(Content.id)).where(
+            Content.content_type.in_([ContentType.pdf, ContentType.document])
+        )
+    )
+    doc_count = doc_count_result.scalar() or 0
+    await check_and_grant_achievements(db, user, {"document_count": doc_count})
+    await db.commit()
+
+    await db.refresh(content)
+    return content
+
+
+class LinkCreate(BaseModel):
+    module_id: int
+    title: str
+    url: str
+
+
+@router.post("/link", response_model=ContentResponse, status_code=status.HTTP_201_CREATED)
+async def add_link(
+    body: LinkCreate,
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Add an external URL as a content item (no file upload needed)."""
+    result = await db.execute(select(Module).where(Module.id == body.module_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    title = body.title.strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="Title cannot be empty")
+
+    existing = await db.execute(
+        select(Content).where(Content.module_id == body.module_id).order_by(Content.order_index.desc()).limit(1)
+    )
+    last = existing.scalar_one_or_none()
+    order = (last.order_index + 1) if last else 0
+
+    content = Content(
+        module_id=body.module_id,
+        title=title,
+        content_type=ContentType.link,
+        url=body.url,
         order_index=order,
     )
     db.add(content)
