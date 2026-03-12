@@ -215,3 +215,65 @@ async def reorder_content(
         if content:
             content.order_index = idx
     await db.commit()
+
+
+@router.get("/{course_id}/progress")
+async def get_course_progress(
+    course_id: int,
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Return completion statistics for a course, broken down by module."""
+    from app.models.progress import VideoProgress
+
+    course_result = await db.execute(select(Course).where(Course.id == course_id))
+    if not course_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    modules_result = await db.execute(
+        select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
+    )
+    modules = modules_result.scalars().all()
+
+    # Get all content ids for this course
+    all_content_ids = []
+    module_content_map: dict[int, list] = {}
+    for mod in modules:
+        content_result = await db.execute(
+            select(Content).where(Content.module_id == mod.id).order_by(Content.order_index)
+        )
+        contents = content_result.scalars().all()
+        module_content_map[mod.id] = contents
+        all_content_ids.extend([c.id for c in contents])
+
+    # Get progress for all content
+    progress_result = await db.execute(
+        select(VideoProgress).where(VideoProgress.content_id.in_(all_content_ids))
+    )
+    progress_map = {vp.content_id: vp.completed for vp in progress_result.scalars().all()}
+
+    module_stats = []
+    total_content = 0
+    completed_content = 0
+
+    for mod in modules:
+        contents = module_content_map.get(mod.id, [])
+        mod_total = len(contents)
+        mod_completed = sum(1 for c in contents if progress_map.get(c.id, False))
+        total_content += mod_total
+        completed_content += mod_completed
+        module_stats.append({
+            "module_id": mod.id,
+            "module_title": mod.title,
+            "total_content": mod_total,
+            "completed_content": mod_completed,
+            "completion_pct": round(100.0 * mod_completed / mod_total, 1) if mod_total > 0 else 0.0,
+        })
+
+    return {
+        "course_id": course_id,
+        "total_content": total_content,
+        "completed_content": completed_content,
+        "completion_pct": round(100.0 * completed_content / total_content, 1) if total_content > 0 else 0.0,
+        "modules": module_stats,
+    }

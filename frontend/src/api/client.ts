@@ -142,6 +142,14 @@ export const aiApi = {
     api.post('/ai/generate/course', { prompt, provider, num_modules: num_modules ?? 5 }),
   generateQuiz: (content_text: string, provider: string, num_questions?: number) =>
     api.post('/ai/generate/quiz', { content_text, provider, num_questions: num_questions ?? 5 }),
+  summarise: (content_id: number, provider: string, mode = 'summary') =>
+    api.post<{ mode: string; result: string }>('/ai/summarise', { content_id, provider, mode }),
+  quizFromContent: (content_id: number, provider: string, num_questions = 5) =>
+    api.post<{ questions: QuizQuestion[] }>('/ai/generate/quiz/content', { content_id, provider, num_questions }),
+  teachBackQuestions: (content_id: number, provider: string) =>
+    api.post<{ questions: string[] }>('/ai/teach-back/questions', { content_id, provider }),
+  gradeTeachBack: (question: string, user_answer: string, provider: string) =>
+    api.post<TeachBackGrade>('/ai/teach-back/grade', { question, user_answer, provider }),
 }
 
 export const subtitlesApi = {
@@ -156,6 +164,8 @@ export const subtitlesApi = {
     api.post(`/subtitles/${contentId}/generate`, null, { params: { language_code } }),
   delete: (id: number) => api.delete(`/subtitles/${id}`),
   serveUrl: (id: number) => `${BASE_URL}/subtitles/${id}/serve`,
+  transcriptionStatus: (contentId: number) =>
+    api.get<{ content_id: number; status: string }>(`/subtitles/${contentId}/transcription-status`),
 }
 
 // ── Type definitions ──────────────────────────────────────────────────────
@@ -232,4 +242,109 @@ export interface AIProviderConfig {
 export interface SubtitleTrack {
   id: number; content_id: number; language_code: string;
   is_auto_generated: boolean; created_at: string;
+}
+
+export const reviewApi = {
+  due: () => api.get<DueCards>('/review/due'),
+  grade: (noteId: number, quality: number) =>
+    api.post<{ card_id: number; next_due: string; new_interval: number; xp_earned: number }>(`/review/${noteId}/grade`, { quality }),
+  addCard: (noteId: number) => api.post<{ card_id: number; note_id: number; due_date: string }>(`/review/cards/${noteId}`),
+  removeCard: (noteId: number) => api.delete(`/review/cards/${noteId}`),
+}
+
+export const searchApi = {
+  search: (q: string) => api.get<SearchResults>('/search', { params: { q } }),
+}
+
+export const studyHistoryApi = {
+  get: (days = 30) => api.get<StudyHistory>('/gamification/study-history', { params: { days } }),
+}
+
+export const graphApi = {
+  get: () => api.get<KnowledgeGraph>('/graph'),
+}
+
+export const courseProgressApi = {
+  get: (courseId: number) => api.get<CourseProgress>(`/courses/${courseId}/progress`),
+}
+
+export interface SearchResults {
+  query: string;
+  courses: { id: number; title: string; description?: string; color: string }[];
+  content: { id: number; title: string; content_type: string; module_id: number; module_title: string; course_id: number }[];
+  notes: { id: number; title: string; body_preview: string; content_id?: number; course_id?: number; updated_at: string }[];
+}
+
+export interface StudyHistoryDay {
+  date: string; xp_earned: number; pomodoro_sessions: number;
+}
+
+export interface StudyHistory {
+  days: number; history: StudyHistoryDay[];
+}
+
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation?: string;
+}
+
+export interface TeachBackGrade {
+  score: number;
+  accuracy: number;
+  depth: number;
+  clarity: number;
+  feedback: string;
+  suggested_answer: string;
+}
+
+export interface ReviewCardItem {
+  card_id: number;
+  note_id: number;
+  note_title: string;
+  note_body: string;
+  due_date: string;
+  interval_days: number;
+  repetitions: number;
+}
+
+export interface DueCards {
+  total_due: number;
+  cards: ReviewCardItem[];
+}
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: string;
+  size?: number;
+  color?: string;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export interface KnowledgeGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export interface CourseModuleProgress {
+  module_id: number;
+  module_title: string;
+  total_content: number;
+  completed_content: number;
+  completion_pct: number;
+}
+
+export interface CourseProgress {
+  course_id: number;
+  total_content: number;
+  completed_content: number;
+  completion_pct: number;
+  modules: CourseModuleProgress[];
 }
