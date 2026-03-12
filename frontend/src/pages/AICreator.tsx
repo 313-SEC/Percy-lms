@@ -73,7 +73,7 @@ export default function AICreator() {
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <h2 className="cursor-blink">AI Course Creator</h2>
         <p className="text-muted text-sm" style={{ marginTop: 'var(--space-2)' }}>
-          Generate a structured course outline using AI, then import it to Percy.
+          Generate a structured course outline using AI, then import it to BLACKSITE: Academy.
         </p>
       </div>
 
@@ -153,7 +153,7 @@ export default function AICreator() {
             <h3>{result.title}</h3>
             <button className="btn btn-secondary" onClick={importCourse} disabled={importing}>
               <span className="material-icons" style={{ fontSize: 16 }}>download</span>
-              {importing ? 'Importing...' : 'Import to Percy'}
+              {importing ? 'Importing...' : 'Import to BLACKSITE'}
             </button>
           </div>
 

@@ -23,8 +23,8 @@ def note_to_markdown(note_data: dict) -> str:
     )
 
 
-def notes_to_markdown(notes: list[dict], title: str = "Percy LMS — Exported Notes") -> str:
-    parts = [f"# {title}\n\n_Exported from Percy LMS on {datetime.now(timezone.utc).strftime('%Y-%m-%d')}_\n\n---\n\n"]
+def notes_to_markdown(notes: list[dict], title: str = "BLACKSITE: Academy — Exported Notes") -> str:
+    parts = [f"# {title}\n\n_Exported from BLACKSITE: Academy on {datetime.now(timezone.utc).strftime('%Y-%m-%d')}_\n\n---\n\n"]
     for note in notes:
         ts = note.get("video_timestamp_seconds")
         timestamp_str = f" (at {_fmt_ts(ts)})" if ts is not None else ""

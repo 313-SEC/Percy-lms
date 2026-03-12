@@ -15,7 +15,7 @@ router = APIRouter(prefix="/export", tags=["export"])
 
 class BulkExportRequest(BaseModel):
     note_ids: list[int]
-    title: str = "Percy LMS — Exported Notes"
+    title: str = "BLACKSITE: Academy — Exported Notes"
     format: str = "markdown"  # "markdown" | "pdf"
 
 
@@ -54,13 +54,13 @@ async def bulk_export(
                 status_code=501,
                 detail="PDF export requires WeasyPrint to be installed",
             )
-        return FileResponse(path, media_type="application/pdf", filename="percy_notes.pdf")
+        return FileResponse(path, media_type="application/pdf", filename="blacksite_notes.pdf")
 
     # Default: Markdown
     return Response(
         content=md_content.encode("utf-8"),
         media_type="text/markdown",
-        headers={"Content-Disposition": 'attachment; filename="percy_notes.md"'},
+        headers={"Content-Disposition": 'attachment; filename="blacksite_notes.md"'},
     )
 
 

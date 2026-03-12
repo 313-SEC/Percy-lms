@@ -1,5 +1,5 @@
 """
-Pytest fixtures for Percy LMS backend tests.
+Pytest fixtures for BLACKSITE: Academy backend tests.
 Uses an in-memory SQLite database so tests are isolated and fast.
 """
 import os
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 os.environ.setdefault("SECRET_KEY", "test-secret-key-that-is-long-enough-for-testing-only-64")
 os.environ.setdefault("ENCRYPTION_KEY", "yb4SXuT2W_kRO-D3xBdgVVFZaQiUwMQ_7aFx3fNOXKI=")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
-os.environ.setdefault("STORAGE_PATH", "/tmp/percy-test-storage")
+os.environ.setdefault("STORAGE_PATH", "/tmp/blacksite-test-storage")
 os.environ.setdefault("DEFAULT_ADMIN_PASSWORD", "testpass123")
 
 from app.database import Base

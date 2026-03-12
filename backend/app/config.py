@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     encryption_key: str  # Fernet key for API-key encryption at rest
 
     # App
-    database_url: str = "sqlite:///./percy.db"
+    database_url: str = "sqlite:///./blacksite.db"
     storage_path: Path = Path("./storage")
     cors_origins: str = "http://localhost:5173"
 

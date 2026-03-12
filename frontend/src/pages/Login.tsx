@@ -41,10 +41,10 @@ export default function Login() {
             className="animate-pulse-text"
             style={{ fontSize: 56, letterSpacing: '0.15em', marginBottom: 'var(--space-2)' }}
           >
-            PERCY
+            BLACKSITE
           </h1>
           <div className="text-muted text-sm" style={{ letterSpacing: '0.3em', textTransform: 'uppercase' }}>
-            Learning OS v1.0
+            ACADEMY IMPLANT v1.0
           </div>
         </div>
 

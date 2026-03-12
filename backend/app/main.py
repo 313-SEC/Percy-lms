@@ -1,5 +1,5 @@
 """
-Percy LMS — FastAPI application entry point.
+BLACKSITE: Academy — FastAPI application entry point.
 Sets up security middleware, CORS, rate limiting, and registers all routers.
 """
 from contextlib import asynccontextmanager
@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
 
 # ── App factory ───────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="Percy LMS",
+    title="BLACKSITE: Academy",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -116,4 +116,4 @@ app.include_router(export.router, prefix=API_PREFIX)
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "app": "Percy LMS"}
+    return {"status": "ok", "app": "BLACKSITE: Academy"}

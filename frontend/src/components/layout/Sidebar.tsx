@@ -15,8 +15,8 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="logo-text animate-pulse-text">PERCY</div>
-        <div className="logo-sub">Learning OS</div>
+        <div className="logo-text animate-pulse-text">BLACKSITE</div>
+        <div className="logo-sub">ACADEMY IMPLANT</div>
       </div>
 
       <nav className="sidebar-nav">

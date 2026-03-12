@@ -44,13 +44,13 @@ export default function Notes() {
     try {
       const res = await api.post('/export/notes/bulk', {
         note_ids: notes.map((n) => n.id),
-        title: 'Percy LMS — All Notes',
+        title: 'BLACKSITE: Academy — All Notes',
         format: 'markdown',
       }, { responseType: 'blob' })
       const url = URL.createObjectURL(res.data)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'percy_notes.md'
+      a.download = 'blacksite_notes.md'
       a.click()
       URL.revokeObjectURL(url)
     } catch {}
