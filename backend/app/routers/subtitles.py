@@ -19,6 +19,20 @@ from app.config import get_settings
 router = APIRouter(prefix="/subtitles", tags=["subtitles"])
 settings = get_settings()
 
+# In-memory transcription status tracker: content_id -> status string
+# Survives as long as the server process is running; cleared on restart.
+_transcription_status: dict[int, str] = {}
+
+
+@router.get("/{content_id}/transcription-status")
+async def get_transcription_status(
+    content_id: int,
+    _user: User = Depends(get_current_user),
+):
+    """Return current Whisper transcription status for a content item."""
+    job_status = _transcription_status.get(content_id, "idle")
+    return {"content_id": content_id, "status": job_status}
+
 
 @router.get("/{content_id}", response_model=list[SubtitleResponse])
 async def list_subtitles(
@@ -92,36 +106,43 @@ async def generate_subtitle(
     if not content.file_path:
         raise HTTPException(status_code=422, detail="Content has no associated file")
 
-    # We pass the DB session factory — background task creates its own session
+    _transcription_status[content_id] = "processing"
+
     background_tasks.add_task(
         _run_whisper_and_save,
         content_id=content_id,
         video_path=content.file_path,
         language_code=language_code,
     )
-    return {"detail": "Subtitle generation started. Check back shortly."}
+    return {"detail": "Subtitle generation started. Check back shortly.", "status": "processing"}
 
 
 async def _run_whisper_and_save(content_id: int, video_path: str, language_code: str) -> None:
     """Background task: run Whisper and save result to DB."""
     from app.database import AsyncSessionLocal
 
-    loop = asyncio.get_event_loop()
-    vtt_path = await loop.run_in_executor(
-        None, generate_subtitles_sync, video_path, content_id, language_code
-    )
-    if not vtt_path:
-        return  # Whisper not installed or failed — silently skip
-
-    async with AsyncSessionLocal() as db:
-        subtitle = Subtitle(
-            content_id=content_id,
-            language_code=language_code,
-            file_path=vtt_path,
-            is_auto_generated=True,
+    try:
+        loop = asyncio.get_event_loop()
+        vtt_path = await loop.run_in_executor(
+            None, generate_subtitles_sync, video_path, content_id, language_code
         )
-        db.add(subtitle)
-        await db.commit()
+        if not vtt_path:
+            _transcription_status[content_id] = "failed"
+            return
+
+        async with AsyncSessionLocal() as db:
+            subtitle = Subtitle(
+                content_id=content_id,
+                language_code=language_code,
+                file_path=vtt_path,
+                is_auto_generated=True,
+            )
+            db.add(subtitle)
+            await db.commit()
+
+        _transcription_status[content_id] = "completed"
+    except Exception:
+        _transcription_status[content_id] = "failed"
 
 
 @router.delete("/{subtitle_id}", status_code=status.HTTP_204_NO_CONTENT)

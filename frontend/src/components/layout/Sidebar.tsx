@@ -2,11 +2,12 @@ import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 
 const NAV_ITEMS = [
-  { to: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-  { to: '/courses',   icon: 'school',     label: 'Courses' },
-  { to: '/notes',     icon: 'edit_note',  label: 'Notes' },
+  { to: '/dashboard', icon: 'dashboard',    label: 'Dashboard' },
+  { to: '/courses',   icon: 'school',       label: 'Courses' },
+  { to: '/notes',     icon: 'edit_note',    label: 'Notes' },
+  { to: '/search',    icon: 'search',       label: 'Search' },
   { to: '/ai',        icon: 'auto_awesome', label: 'AI Creator' },
-  { to: '/settings',  icon: 'settings',   label: 'Settings' },
+  { to: '/settings',  icon: 'settings',     label: 'Settings' },
 ]
 
 export default function Sidebar() {

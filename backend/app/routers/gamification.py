@@ -1,9 +1,12 @@
 """Gamification stats, achievements, and XP history router."""
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from datetime import date, timedelta
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.gamification import Achievement, XPEvent
+from app.models.gamification import Achievement, DailyStreak, XPEvent
+from app.models.progress import PomodoroSession, VideoProgress
 from app.models.user import User
 from app.schemas.gamification import AchievementResponse, GamificationStats, XPEventResponse
 from app.services.gamification_service import level_from_xp, xp_for_level, xp_progress
@@ -52,3 +55,54 @@ async def xp_history(
         select(XPEvent).order_by(XPEvent.earned_at.desc()).limit(min(limit, 200))
     )
     return result.scalars().all()
+
+
+@router.get("/study-history")
+async def study_history(
+    days: int = Query(30, ge=7, le=365),
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Return day-by-day study activity for the past N days (for charts)."""
+    today = date.today()
+    start = today - timedelta(days=days - 1)
+
+    # XP earned per day
+    xp_result = await db.execute(
+        select(
+            func.date(XPEvent.earned_at).label("day"),
+            func.sum(XPEvent.xp_amount).label("xp"),
+        )
+        .where(func.date(XPEvent.earned_at) >= start)
+        .group_by(func.date(XPEvent.earned_at))
+        .order_by(func.date(XPEvent.earned_at))
+    )
+    xp_by_day = {str(row.day): int(row.xp) for row in xp_result}
+
+    # Pomodoro sessions per day
+    pom_result = await db.execute(
+        select(
+            func.date(PomodoroSession.started_at).label("day"),
+            func.count(PomodoroSession.id).label("sessions"),
+        )
+        .where(
+            PomodoroSession.completed.is_(True),
+            PomodoroSession.session_type == "work",
+            func.date(PomodoroSession.started_at) >= start,
+        )
+        .group_by(func.date(PomodoroSession.started_at))
+    )
+    pom_by_day = {str(row.day): int(row.sessions) for row in pom_result}
+
+    # Build complete day list
+    history = []
+    for i in range(days):
+        day = start + timedelta(days=i)
+        day_str = day.isoformat()
+        history.append({
+            "date": day_str,
+            "xp_earned": xp_by_day.get(day_str, 0),
+            "pomodoro_sessions": pom_by_day.get(day_str, 0),
+        })
+
+    return {"days": days, "history": history}

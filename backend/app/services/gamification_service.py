@@ -160,6 +160,12 @@ async def check_and_grant_achievements(
     if context.get("night_owl"):
         await _grant("night_owl")
 
+    if context.get("document_count", 0) >= 50:
+        await _grant("bookworm")
+
+    if context.get("course_completed_today"):
+        await _grant("speed_runner")
+
     if stats.total_xp >= 1000:
         await _grant("xp_1000")
 

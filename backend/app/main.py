@@ -14,7 +14,7 @@ from slowapi.util import get_remote_address
 
 from app.config import get_settings
 from app.database import init_db
-from app.routers import ai, auth, content, courses, export, gamification, notes, player, pomodoro, subtitles, upload
+from app.routers import ai, auth, content, courses, export, gamification, notes, player, pomodoro, search, subtitles, upload
 
 settings = get_settings()
 
@@ -112,6 +112,7 @@ app.include_router(gamification.router, prefix=API_PREFIX)
 app.include_router(ai.router, prefix=API_PREFIX)
 app.include_router(subtitles.router, prefix=API_PREFIX)
 app.include_router(export.router, prefix=API_PREFIX)
+app.include_router(search.router, prefix=API_PREFIX)
 
 
 @app.get("/api/health")
