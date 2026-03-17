@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { api, coursesApi, type Module } from '../../api/client'
 
-type UploadType = 'video' | 'document' | 'link'
+type UploadType = 'video' | 'document' | 'link' | 'youtube'
 
 export default function UploadModal({ courseId, onClose, onUploaded }: {
   courseId: number; onClose: () => void; onUploaded: () => void
@@ -27,14 +27,14 @@ export default function UploadModal({ courseId, onClose, onUploaded }: {
   const upload = async (e: FormEvent) => {
     e.preventDefault()
     if (!moduleId || !title.trim()) return
-    if (type !== 'link' && !file) return
-    if (type === 'link' && !url.trim()) return
+    if (type !== 'link' && type !== 'youtube' && !file) return
+    if ((type === 'link' || type === 'youtube') && !url.trim()) return
 
     setUploading(true)
     setError('')
 
     try {
-      if (type === 'link') {
+      if (type === 'link' || type === 'youtube') {
         await api.post('/upload/link', { module_id: moduleId, title: title.trim(), url: url.trim() })
       } else {
         const form = new FormData()
@@ -65,17 +65,20 @@ export default function UploadModal({ courseId, onClose, onUploaded }: {
           <div className="form-group">
             <label className="form-label">Type</label>
             <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-              {(['video', 'document', 'link'] as UploadType[]).map((t) => (
+              {([
+                { id: 'video',    icon: 'videocam',   label: 'Video' },
+                { id: 'document', icon: 'description', label: 'Document' },
+                { id: 'link',     icon: 'link',        label: 'Link' },
+                { id: 'youtube',  icon: 'smart_display', label: 'YouTube' },
+              ] as { id: UploadType; icon: string; label: string }[]).map(({ id: t, icon, label }) => (
                 <button
                   key={t}
                   type="button"
                   className={`btn ${type === t ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => { setType(t); setFile(null); setUrl('') }}
                 >
-                  <span className="material-icons" style={{ fontSize: 16 }}>
-                    {t === 'video' ? 'videocam' : t === 'document' ? 'description' : 'link'}
-                  </span>
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  <span className="material-icons" style={{ fontSize: 16 }}>{icon}</span>
+                  {label}
                 </button>
               ))}
             </div>
@@ -97,17 +100,24 @@ export default function UploadModal({ courseId, onClose, onUploaded }: {
             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} required />
           </div>
 
-          {type === 'link' ? (
+          {type === 'link' || type === 'youtube' ? (
             <div className="form-group">
-              <label className="form-label">URL</label>
+              <label className="form-label">
+                {type === 'youtube' ? 'YouTube URL' : 'URL'}
+              </label>
               <input
                 className="input"
                 type="url"
-                placeholder="https://..."
+                placeholder={type === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'https://...'}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
               />
+              {type === 'youtube' && (
+                <p className="text-xs text-muted" style={{ marginTop: 4 }}>
+                  Saved as an external link — opens in your browser.
+                </p>
+              )}
             </div>
           ) : (
             <div className="form-group">
@@ -130,7 +140,7 @@ export default function UploadModal({ courseId, onClose, onUploaded }: {
             </div>
           )}
 
-          {uploading && type !== 'link' && (
+          {uploading && type !== 'link' && type !== 'youtube' && (
             <div style={{ marginBottom: 'var(--space-4)' }}>
               <div className="progress-bar-track">
                 <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
@@ -146,9 +156,11 @@ export default function UploadModal({ courseId, onClose, onUploaded }: {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={uploading || !moduleId || (type === 'link' ? !url.trim() : !file)}
+              disabled={uploading || !moduleId || ((type === 'link' || type === 'youtube') ? !url.trim() : !file)}
             >
-              {uploading ? (type === 'link' ? 'Saving...' : `Uploading... ${progress}%`) : (type === 'link' ? 'Add Link' : 'Upload')}
+              {uploading
+                ? ((type === 'link' || type === 'youtube') ? 'Saving...' : `Uploading... ${progress}%`)
+                : ((type === 'link' || type === 'youtube') ? 'Add Link' : 'Upload')}
             </button>
           </div>
         </form>

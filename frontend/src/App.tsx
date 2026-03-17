@@ -10,6 +10,8 @@ import Notes from './pages/Notes'
 import AICreator from './pages/AICreator'
 import Settings from './pages/Settings'
 import Search from './pages/Search'
+import Review from './pages/Review'
+import Graph from './pages/Graph'
 
 function PrivateRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -35,6 +37,8 @@ export default function App() {
         <Route path="notes" element={<Notes />} />
         <Route path="ai" element={<AICreator />} />
         <Route path="search" element={<Search />} />
+        <Route path="review" element={<Review />} />
+        <Route path="graph" element={<Graph />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

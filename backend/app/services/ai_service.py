@@ -32,6 +32,52 @@ Return ONLY valid JSON in this exact structure:
 Generate {num_modules} modules. Be specific and educational.
 """
 
+SUMMARISE_PROMPT = """\
+Summarise the following content. Mode: {mode}
+
+Content:
+{content}
+
+Instructions:
+- If mode is "summary": Return a concise prose summary (3-5 paragraphs).
+- If mode is "key_points": Return 5-10 bullet points of the key ideas as plain text, one per line starting with "• ".
+- If mode is "flashcards": Return ONLY valid JSON: {{"cards": [{{"front": "Question or term?", "back": "Answer or definition"}}]}}
+"""
+
+TEACH_BACK_QUESTIONS_PROMPT = """\
+Based on the following content, generate 5 thought-provoking open-ended questions that test deep understanding.
+
+Content:
+{content}
+
+Return ONLY valid JSON:
+{{
+  "questions": [
+    "Question 1?",
+    "Question 2?",
+    "Question 3?",
+    "Question 4?",
+    "Question 5?"
+  ]
+}}
+"""
+
+TEACH_BACK_GRADE_PROMPT = """\
+You are a tutor evaluating a student's answer to a question.
+
+Question: {question}
+Student's answer: {user_answer}
+
+Score the answer on a scale of 1-5 (1=completely wrong, 3=partially correct, 5=excellent) and provide constructive feedback.
+
+Return ONLY valid JSON:
+{{
+  "score": 3,
+  "feedback": "Detailed feedback here...",
+  "model_answer": "What a complete answer would look like..."
+}}
+"""
+
 QUIZ_PROMPT = """\
 Based on the following content, generate {num_questions} multiple-choice quiz questions in JSON.
 
@@ -186,6 +232,35 @@ class AIService:
     ) -> dict:
         adapter = _make_adapter(config)
         prompt = QUIZ_PROMPT.format(content=content_text[:4000], num_questions=num_questions)
+        raw = await adapter.complete(prompt)
+        return _parse_json(raw)
+
+    async def summarise(
+        self, config: dict[str, Any], content_text: str, mode: str = "summary"
+    ) -> dict:
+        adapter = _make_adapter(config)
+        prompt = SUMMARISE_PROMPT.format(content=content_text[:6000], mode=mode)
+        raw = await adapter.complete(prompt)
+        if mode == "flashcards":
+            try:
+                return _parse_json(raw)
+            except Exception:
+                return {"mode": mode, "result": raw.strip()}
+        return {"mode": mode, "result": raw.strip()}
+
+    async def generate_teach_back_questions(
+        self, config: dict[str, Any], content_text: str
+    ) -> dict:
+        adapter = _make_adapter(config)
+        prompt = TEACH_BACK_QUESTIONS_PROMPT.format(content=content_text[:6000])
+        raw = await adapter.complete(prompt)
+        return _parse_json(raw)
+
+    async def grade_teach_back(
+        self, config: dict[str, Any], question: str, user_answer: str
+    ) -> dict:
+        adapter = _make_adapter(config)
+        prompt = TEACH_BACK_GRADE_PROMPT.format(question=question, user_answer=user_answer)
         raw = await adapter.complete(prompt)
         return _parse_json(raw)
 

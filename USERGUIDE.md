@@ -1,6 +1,6 @@
 # Percy LMS — Complete User Guide
 
-> A personal Learning Management System with gamification, AI course generation, video streaming, and spaced note-taking.
+> A personal Learning Management System with gamification, AI course generation, video streaming, spaced repetition, and a knowledge graph.
 
 ---
 
@@ -17,7 +17,10 @@
 9. [Search](#9-search)
 10. [Settings — AI Providers](#10-settings--ai-providers)
 11. [Export & NotebookLM](#11-export--notebooklm)
-12. [Appendix](#12-appendix)
+12. [Spaced Repetition Review](#12-spaced-repetition-review)
+13. [Knowledge Graph](#13-knowledge-graph)
+14. [Player AI Tools](#14-player-ai-tools)
+15. [Appendix](#15-appendix)
 
 ---
 
@@ -610,7 +613,7 @@ Use the `format: "pdf"` option in the bulk export API call, or `?fmt=pdf` for co
 
 ---
 
-## 12. Appendix
+## 15. Appendix
 
 ### Default Credentials
 
@@ -671,9 +674,120 @@ SECRET_KEY=xxx ENCRYPTION_KEY=xxx alembic downgrade -1
 
 > Note: Alembic is pre-configured to use `render_as_batch=True` which is required for SQLite column alterations.
 
-### API Documentation
+---
 
-The full interactive API documentation (Swagger UI) is available at:
+## 12. Spaced Repetition Review
+
+Navigate to **Review** in the sidebar. The badge next to the label shows how many cards are due today.
+
+### How It Works
+
+Percy uses the **SM-2** algorithm (the same one powering Anki). Each note can optionally have a review card. When a card is due, you read the note, then rate how well you recalled it:
+
+| Rating | Meaning |
+|---|---|
+| 0–2 | Forgot — card resets to 1-day interval |
+| 3 | Remembered with difficulty — interval grows slowly |
+| 4 | Recalled correctly — normal increase |
+| 5 | Perfect recall — larger interval jump |
+
+### Creating Review Cards
+
+1. Open a note in the **Notes** page
+2. Click **Add to Review** — the note becomes a flashcard due today
+
+### Working Through a Session
+
+1. Navigate to **Review** (`/review`)
+2. Read the note body
+3. Select a quality rating (0–5)
+4. Percy schedules the next review date automatically
+5. Completing a review earns **3 XP**
+
+The badge in the sidebar updates every 60 seconds. Once all cards for the day are reviewed, the badge disappears.
+
+---
+
+## 13. Knowledge Graph
+
+Navigate to **Graph** (`/graph`) in the sidebar.
+
+The graph visualises the relationships between your courses, modules, and notes in a radial SVG layout:
+
+- **Cyan nodes (inner ring):** Courses
+- **Purple nodes (middle ring):** Modules, positioned near their parent course
+- **Green nodes (outer ring):** Notes, linked to their course
+
+### Controls
+
+| Action | How |
+|---|---|
+| Zoom | Scroll wheel |
+| Pan | Click and drag on the background |
+| Reset view | Click the **Reset** button |
+| Inspect a node | Hover — the label and type appear in the info bar below the graph |
+
+The graph updates automatically as you add courses, modules, and notes. If the graph is empty, create some courses and notes first.
+
+---
+
+## 14. Player AI Tools
+
+While watching a video or reading a document, open the **AI Tools** tab in the player sidebar (requires an AI provider in Settings).
+
+### Summarise
+
+Analyse the current content and generate one of:
+
+- **Summary** — 3–5 paragraph prose overview
+- **Key Points** — bullet-point list of the main ideas
+- **Flashcards** — interactive flip-cards; click a card to reveal the answer
+
+The text used comes from subtitle files (for videos) or the document file (for plain-text formats). Add notes to supplement if the file has no readable text.
+
+### Quiz
+
+Generates multiple-choice questions directly from the content.
+
+1. Set the number of questions (3–15)
+2. Click **Generate Quiz**
+3. Click an option to answer — correct answers turn green, wrong ones turn red
+4. The explanation appears after each answer
+
+### Teach-Back
+
+Forces active recall by making you *explain* the material.
+
+1. Click **Get Questions** — 5 open-ended questions are generated
+2. Read question 1, type your answer in the text box
+3. Click **Submit Answer** — the AI grades it 1–5 ★ and provides feedback + a model answer
+4. Click **Next Question** to continue
+
+### Voice Note
+
+Records a spoken note using the browser's Speech Recognition API (Chrome/Edge only).
+
+1. Click **Voice Note** in the subtitle controls row
+2. Speak your note
+3. When you stop speaking, the transcript is saved as a timestamped note in the Notes tab
+
+### Auto-Generate Subtitles (Whisper)
+
+Click **Auto-generate** in the subtitle controls row. Percy runs Whisper in the background and polls every 5 seconds. The status message updates from *Processing* to *Done* and the subtitle track loads automatically — no manual refresh needed.
+
+---
+
+## 15. Appendix
+
+### Course Progress Bars
+
+Each course card on the Courses page displays a coloured progress bar showing what percentage of the content items in that course have been marked as completed. Progress is calculated automatically from your watch history.
+
+### YouTube / External Links
+
+Use the **YouTube** tab in the Upload Modal to add a YouTube URL as a content item. The video opens in your browser when you click it (no in-app embedding). The same goes for generic external links added via the **Link** tab.
+
+### API Docs (Developer)
 
 ```
 http://localhost:8000/api/docs

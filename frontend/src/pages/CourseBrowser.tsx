@@ -25,11 +25,13 @@ import CourseDetailPanel from '../components/courses/CourseDetailPanel'
 function SortableCourse({
   course,
   selected,
+  progress,
   onSelect,
   onDelete,
 }: {
   course: Course
   selected: boolean
+  progress?: number | null
   onSelect: () => void
   onDelete: () => void
 }) {
@@ -41,6 +43,7 @@ function SortableCourse({
       <CourseCard
         course={course}
         selected={selected}
+        progress={progress}
         onSelect={onSelect}
         onDelete={onDelete}
         dragHandleProps={{ ...attributes, ...listeners }}
@@ -51,6 +54,7 @@ function SortableCourse({
 
 export default function CourseBrowser() {
   const [courses, setCourses] = useState<Course[]>([])
+  const [progressMap, setProgressMap] = useState<Record<number, number>>({})
   const [showCreate, setShowCreate] = useState(false)
   const [showUpload, setShowUpload] = useState<number | null>(null)
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null)
@@ -60,7 +64,20 @@ export default function CourseBrowser() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const load = () => coursesApi.list().then((r) => setCourses(r.data)).catch(() => {})
+  const load = () =>
+    coursesApi.list().then((r) => {
+      setCourses(r.data)
+      // Fetch progress for all courses in parallel
+      Promise.all(
+        r.data.map((c) =>
+          coursesApi.progress(c.id).then((pr) => ({ id: c.id, pct: pr.data.completion_pct })).catch(() => null)
+        )
+      ).then((results) => {
+        const map: Record<number, number> = {}
+        results.forEach((res) => { if (res) map[res.id] = res.pct })
+        setProgressMap(map)
+      })
+    }).catch(() => {})
 
   useEffect(() => { load() }, [])
 
@@ -124,6 +141,7 @@ export default function CourseBrowser() {
                   key={course.id}
                   course={course}
                   selected={selectedCourse === course.id}
+                  progress={progressMap[course.id] ?? null}
                   onSelect={() =>
                     setSelectedCourse(selectedCourse === course.id ? null : course.id)
                   }

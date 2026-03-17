@@ -75,3 +75,26 @@ class QuizGenerationRequest(BaseModel):
     content_text: str
     provider: str
     num_questions: int = 5
+
+
+class SummariseRequest(BaseModel):
+    content_id: int
+    provider: str
+    mode: str = "summary"  # summary | key_points | flashcards
+
+
+class QuizFromContentRequest(BaseModel):
+    content_id: int
+    provider: str
+    num_questions: int = 5
+
+
+class TeachBackQuestionsRequest(BaseModel):
+    content_id: int
+    provider: str
+
+
+class TeachBackGradeRequest(BaseModel):
+    question: str
+    user_answer: str
+    provider: str

@@ -1,10 +1,14 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { reviewApi } from '../../api/client'
 
-const NAV_ITEMS = [
+const BASE_NAV = [
   { to: '/dashboard', icon: 'dashboard',    label: 'Dashboard' },
   { to: '/courses',   icon: 'school',       label: 'Courses' },
   { to: '/notes',     icon: 'edit_note',    label: 'Notes' },
+  { to: '/review',    icon: 'style',        label: 'Review' },
+  { to: '/graph',     icon: 'hub',          label: 'Graph' },
   { to: '/search',    icon: 'search',       label: 'Search' },
   { to: '/ai',        icon: 'auto_awesome', label: 'AI Creator' },
   { to: '/settings',  icon: 'settings',     label: 'Settings' },
@@ -12,6 +16,15 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const logout = useAuthStore((s) => s.logout)
+  const [dueCount, setDueCount] = useState(0)
+
+  useEffect(() => {
+    reviewApi.due().then((r) => setDueCount(r.data.total_due)).catch(() => {})
+    const interval = setInterval(() => {
+      reviewApi.due().then((r) => setDueCount(r.data.total_due)).catch(() => {})
+    }, 60_000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <aside className="sidebar">
@@ -21,7 +34,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ to, icon, label }) => (
+        {BASE_NAV.map(({ to, icon, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -29,6 +42,26 @@ export default function Sidebar() {
           >
             <span className="material-icons">{icon}</span>
             {label}
+            {to === '/review' && dueCount > 0 && (
+              <span
+                style={{
+                  marginLeft: 'auto',
+                  background: 'var(--cyan)',
+                  color: 'var(--bg)',
+                  borderRadius: '9999px',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  minWidth: '1.3rem',
+                  height: '1.3rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 4px',
+                }}
+              >
+                {dueCount > 99 ? '99+' : dueCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

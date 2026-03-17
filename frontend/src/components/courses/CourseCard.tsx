@@ -3,12 +3,13 @@ import type { Course } from '../../api/client'
 interface Props {
   course: Course
   selected?: boolean
+  progress?: number | null
   onSelect: () => void
   onDelete: () => void
   dragHandleProps?: Record<string, unknown>
 }
 
-export default function CourseCard({ course, selected, onSelect, onDelete, dragHandleProps }: Props) {
+export default function CourseCard({ course, selected, progress, onSelect, onDelete, dragHandleProps }: Props) {
   return (
     <div
       className="course-card"
@@ -65,6 +66,22 @@ export default function CourseCard({ course, selected, onSelect, onDelete, dragH
           <span className="material-icons" style={{ fontSize: 18 }}>drag_indicator</span>
         </div>
       </div>
+
+      {/* Progress bar */}
+      {progress != null && (
+        <div style={{ marginTop: 'var(--space-3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+            <span className="text-xs text-muted">Progress</span>
+            <span className="text-xs" style={{ color: course.color }}>{progress}%</span>
+          </div>
+          <div className="progress-bar-track">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${progress}%`, background: course.color, boxShadow: `0 0 6px ${course.color}88` }}
+            />
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)', alignItems: 'center' }}>
         <span className="text-xs text-muted" style={{ flex: 1 }}>

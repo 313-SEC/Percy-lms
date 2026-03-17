@@ -102,6 +102,8 @@ export const coursesApi = {
     api.post(`/courses/${courseId}/modules/reorder`, { ids }),
   reorderContent: (moduleId: number, ids: number[]) =>
     api.post(`/courses/modules/${moduleId}/content/reorder`, { ids }),
+  progress: (courseId: number) =>
+    api.get<{ course_id: number; total_content: number; completed_content: number; completion_pct: number }>(`/courses/${courseId}/progress`),
 }
 
 export const playerApi = {
@@ -143,7 +145,7 @@ export const aiApi = {
   generateQuiz: (content_text: string, provider: string, num_questions?: number) =>
     api.post('/ai/generate/quiz', { content_text, provider, num_questions: num_questions ?? 5 }),
   summarise: (content_id: number, provider: string, mode = 'summary') =>
-    api.post<{ mode: string; result: string }>('/ai/summarise', { content_id, provider, mode }),
+    api.post<{ mode: string; result?: string; cards?: { front: string; back: string }[] }>('/ai/summarise', { content_id, provider, mode }),
   quizFromContent: (content_id: number, provider: string, num_questions = 5) =>
     api.post<{ questions: QuizQuestion[] }>('/ai/generate/quiz/content', { content_id, provider, num_questions }),
   teachBackQuestions: (content_id: number, provider: string) =>
@@ -166,8 +168,20 @@ export const subtitlesApi = {
     api.get<{ content_id: number; status: string }>(`/subtitles/${contentId}/transcription-status`),
   delete: (id: number) => api.delete(`/subtitles/${id}`),
   serveUrl: (id: number) => `${BASE_URL}/subtitles/${id}/serve`,
-  transcriptionStatus: (contentId: number) =>
-    api.get<{ content_id: number; status: string }>(`/subtitles/${contentId}/transcription-status`),
+}
+
+export const reviewApi = {
+  due: () => api.get<{ total_due: number; cards: ReviewCardItem[] }>('/review/due'),
+  grade: (noteId: number, quality: number) =>
+    api.post<{ card_id: number; next_due: string; new_interval: number; xp_earned: number }>(
+      `/review/${noteId}/grade`, { quality }
+    ),
+  createCard: (noteId: number) => api.post(`/review/cards/${noteId}`),
+  deleteCard: (noteId: number) => api.delete(`/review/cards/${noteId}`),
+}
+
+export const graphApi = {
+  get: () => api.get<GraphData>('/graph'),
 }
 
 export const searchApi = {
@@ -267,4 +281,30 @@ export interface StudyHistoryDay {
 
 export interface StudyHistory {
   days: number; history: StudyHistoryDay[];
+}
+
+export interface ReviewCardItem {
+  card_id: number; note_id: number; note_title: string;
+  note_body: string; due_date: string; interval_days: number; repetitions: number;
+}
+
+export interface QuizQuestion {
+  question: string; options: string[]; correct: number; explanation: string;
+}
+
+export interface TeachBackGrade {
+  score: number; feedback: string; model_answer: string;
+}
+
+export interface GraphNode {
+  id: string; label: string; type: 'course' | 'module' | 'note';
+  color: string; size: number;
+}
+
+export interface GraphEdge {
+  source: string; target: string; label: string;
+}
+
+export interface GraphData {
+  nodes: GraphNode[]; edges: GraphEdge[];
 }

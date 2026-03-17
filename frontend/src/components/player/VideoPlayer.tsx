@@ -18,6 +18,7 @@ const PROGRESS_THROTTLE_MS = 10_000
 
 export interface VideoPlayerHandle {
   seek: (seconds: number) => void
+  currentTime: () => number
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
@@ -36,6 +37,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       seek: (secs) => {
         if (videoRef.current) videoRef.current.currentTime = secs
       },
+      currentTime: () => videoRef.current?.currentTime ?? 0,
     }))
 
     const videoSrc = `/api/content/${contentId}/stream`
